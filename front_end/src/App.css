@@ -7,6 +7,10 @@
     margin: auto;
 }
 
+.editPage {
+    margin: 20px;
+}
+
 .red {
     display: block;
     width: 100%;
@@ -18,3 +22,8 @@
 .red-border {
     border: 1px solid #d9534f;
 }
+
+.hidden {
+    display: none;
+}
+
