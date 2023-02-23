@@ -2,7 +2,7 @@ import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 //import FormContainer from 'react-bootstrap/FormContainer';
 //import CountrySelect from 'react-bootstrap-country-select';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Multiselect } from "multiselect-react-dropdown";
 // phone number input code
 import 'react-phone-number-input/style.css'
@@ -353,21 +353,19 @@ function SignUp() {
             newErrors.phone_number = 'Phone number is too short.';
         } else if (phone_number.length === 0) {
             newErrors.phone_number = 'Please enter a phone number.';
-        }
-
-        /*else {
+        } else {
+            // phone numbers should be unique for all users
             fetch(`/phone_number-check/${phone_number}`).then(
                 res => res.text()
             ).then(
                 data => {
-                    // if username is taken then throw error
+                    // if phone_number is taken then throw error
                     if (data === 'True') {
-                        newErrors.phone_number = 'Phone number is already taken.';
+                        setErrors({...errors, 'phone_number': 'Phone number is already taken.'})
                     }
-                    console.log('test', data)
                 }
             )
-        }*/
+        }
 
         /*
            I am deleting any addresses that were not specifically saved by the user. If the
@@ -390,7 +388,7 @@ function SignUp() {
                 }
             }
         }
-        console.log(newErrors);
+
         return newErrors;
     }
 
