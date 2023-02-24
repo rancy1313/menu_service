@@ -10,7 +10,10 @@ import PhoneInput from 'react-phone-number-input'
 import Card from 'react-bootstrap/Card';
 
 function SignUp() {
+
+    // set the available allergies to pass in the bootstrap selector
     const allergies = ['Milk', 'Egg', 'Fish', 'Crustacean Shell Fish', 'Tree Nuts', 'Wheat', 'Peanuts', 'Soybeans', 'Sesame']
+
     // set the date of birth value here to preset the date of birth option to current date
     var dateObj = new Date();
     var month = dateObj.getUTCMonth() + 1; //months from 1-12
@@ -18,18 +21,28 @@ function SignUp() {
     var year = dateObj.getUTCFullYear();
     var newDate = year + "-" + month.toString().padStart(2, '0') + "-" + day.toString().padStart(2, '0');
 
+    // we have a base form set that will hold all the information from the user to send to the backend when completed
     const [form, setForm] = useState({'dob': newDate, 'name': '', 'username': '', 'password': '',
                                       'confirm_password': '', 'allergies': ['None'], 'phone_number': '',
                                       'user_addresses': {'delivery_address1': {'address_name': '', 'city': '',
                                       'address': '', 'zipcode': ''}}});
 
+    // this is to shorten the code needed to get the current address which is the address that is currently being edited
+    const current_address = form['user_addresses'][Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]];
+
+    // if the data from the user is not up to specifications then there will be an error and the form will
+    // not be sent to the backend
     const [errors, setErrors] = useState({});
+
+    // only addresses that were saved by the user will be sent to the backend
     const [saved_addresses, setSaved_addresses] = useState([]);
+
+    // this is used for our onChange function to update the form
     const setField = (field, value) => {
         console.log('field: ', field);
         console.log('value: ', value);
         /*
-           1. if it is a delivery address change then those are done differently
+           1. if it is a delivery address change then those are updated differently
               b/c they are kept in a object.
 
            2. We want to update the current address the user is editing which is the last item in the
@@ -60,6 +73,7 @@ function SignUp() {
         }
     }
 
+    // this component is to format the saved addresses
     function AddressCards({ index, id, address_name, city, address, zipcode }) {
         return (
             <Card style={{ width: '23rem' }}>
@@ -74,18 +88,19 @@ function SignUp() {
         );
     }
 
+    // will delete any of the saved addresses of the user by searching for it with an id of the address
     function deleteAddress(e, id) {
         e.preventDefault();
-        const tmp = form.user_addresses;
-        delete tmp[id];
-        setForm({
-            ...form,
-            'user_addresses':tmp
-        })
+        // delete the address
+        delete form.user_addresses[id];
+        // remove the address from the saved address list b/c then it wont be pass to the backend
         setSaved_addresses(saved_addresses.filter(address => address !== id));
     }
 
+    // this is format for the edit page that replaces the address when the user clicks the edit button
     function EditPage({ index, id, address_name, city, address, zipcode }) {
+
+        // we use editForm as a temporary new address object to update the old address
         const [editForm, setEditForm] = useState({ 'id': id, 'address_name': address_name, 'city': city,
                                                  'address': address, 'zipcode': zipcode });
 
@@ -154,61 +169,58 @@ function SignUp() {
         );
     }
 
+    // this function is to use the temporary editForm to update the corresponding address in the form
     function editAddress(e, id, editForm) {
         e.preventDefault();
 
+        // we delete any of the previous errors as they were not saved
         delete errors[('editField_' + id)];
-        setErrors(errors);
 
+        // this div holds the errors and we toggle a hidden class to hide the errors when the user tries to edit again
         const div = document.getElementById('div_' + id);
-
+        // the edit page has a hidden class that is toggled whne the edit button is pressed
         const edit_page = document.getElementById('editPage_' + id);
-
+        // the address that the user is trying to edit is held in a card that has a hidden class that is toggled
+        // to then show the edit page instead
         const card = document.getElementById('card_' + id);
-
+        // we change the inner text/style from edit to save changes
         const edit_button = document.getElementById('editButton_' + id);
-
+        // we hold any errors in here to update the errors object
         const newErrors = {};
 
         for (const field in editForm) {
+            // if a field is empty then we throw an error and changes are not saved
             if (editForm[field] === '') {
-                /*console.log('value too short')
-                const tmp_field = field + '_' + id;
-                newErrors[tmp_field] = 'Please fill out the rest of the field.';
-
-                setErrors(newErrors);
-                console.log('newErrors:', newErrors)*/
-
                 newErrors[('editField_'+id)] = 'Changes were not saved because a field was empty.';
                 setErrors(newErrors);
+                // break b/c the error would be the same for whichever field it was
                 break;
             }
         }
 
-        if (Object.keys(newErrors).length <= 0) {
+        // if there are no errors then proceed with updating the address
+        if (Object.keys(newErrors).length === 0) {
+            // toggle the div to hide the errors
             div.classList.toggle('hidden');
+            // toggle the edit page to hide it
             edit_page.classList.toggle('hidden');
+            // toggle the card to show the address again in the card component
             card.classList.toggle('hidden');
+            // change the styles of the edit button back to yellow
             edit_button.classList.toggle('btn-warning');
             edit_button.classList.toggle('btn-success');
 
+            // if edit page is hidden then we can save the changes
             if (edit_page.classList.contains('hidden')) {
+                // change the text back to edit so the user can edit again
                 edit_button.innerText = 'Edit';
                 form.user_addresses[id] = editForm;
                 setForm({
                     ...form,
                     'user_addresses': form.user_addresses
-                })
-                /*
-                // delete all errors as there should be none at this point
-                for (const field in editForm) {
-                    const tmp_field = field + '_' + id;
-                    delete errors[tmp_field];
-                }
-                console.log(errors)*/
-
-
+                });
             } else {
+                // else change the text to save changes
                 edit_button.innerText = 'Save Changes';
             }
         }
@@ -216,24 +228,31 @@ function SignUp() {
 
     // this function is to get a list of the addresses to map over them and display them in cards
     function getAddresses() {
+        // this list is to collect the addresses
         const addresses = [];
+
         // loop through the keys to append them to a list and return them
         for (const key in form.user_addresses) {
+
             // we do not want the latest address because that is the one that is being saved
             if (key !== Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]) {
                 addresses.push(key)
             }
         }
+
         return addresses;
     }
 
+    // this is the onChange function for the phone number component
     function setPhoneNumber(value) {
 
+        // update the form
         setForm({
             ...form,
             'phone_number':value
         })
 
+        // delete the errors
         if(!!errors['phone_number'])
         setErrors({
             ...errors,
@@ -247,32 +266,42 @@ function SignUp() {
         }
     }
 
+    // this is used for the onSelect function of the Multiselect component and just updates the form by form
     function setAllergies(selectedList, selectedItem) {
         setField('allergies', selectedList);
     }
 
-    function addNewAddress(e) {
+    // this function is for the user to save an address
+    function saveNewAddress(e) {
         e.preventDefault();
-        const current_address = form['user_addresses'][Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]];
-        // form['user_addresses'][Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]]
-        // 'Please fill out all fields before adding a new address.'
+
+        // hold any any errors to update the errors object
         const newErrors = {}
-        for (const key in current_address) {
-            if (current_address[key] === '') {
+
+        // loop through the fields in the current address and check if any of them are empty
+        for (const field in current_address) {
+            // if empty the throw an error
+            if (current_address[field] === '') {
                 // add a new key/value with the key letting the user know which specific field is still empty
-                newErrors[[key]] = 'Please fill out all fields before adding a new address.';
+                newErrors[field] = 'Please fill out all fields before adding a new address.';
             }
         }
+
+        // loop through all the saved addresses' name and if they match the current one then throw an error
+        // addresses are supposed to have unique names
         for (const key in form.user_addresses) {
+            // make the string upper to remove case sensitivity when comparing names
+            // if the name matches throw error but make sure that the current address is also not the current one being looped
             if (current_address.address_name.toUpperCase() === form.user_addresses[key].address_name.toUpperCase() && current_address !== form.user_addresses[key]) {
                 newErrors['address_name'] = 'This name has been used for a previous address. Please choose a different name.';
             }
         }
+
         // if there are any errors then alert the user
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
         } else {
-            //setSaved_addresses(saved_addresses.push(Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]));
+            // update saved addresses list to include the new address
             setSaved_addresses(saved_addresses => [...saved_addresses, Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]])
             // if there are no errors then we add a new address
             // we cannot directly change the form so we assign it to a tmp var to then reassign in setForm function
@@ -298,13 +327,19 @@ function SignUp() {
         }
     }
 
+    // this is to calculate the user's age based on the inputed date
     function getAge(userBirthday) {
 
+        // get the current day
         let today = new Date();
+        // get the day of the birthday
         let birthDay = new Date(userBirthday);
+        // calculate the difference in months
         let months = today.getMonth() - birthDay.getMonth();
+        // calculate the difference in years
         let calculatedAge = today.getFullYear() - birthDay.getFullYear();
 
+        // check if we need to subtract a year to give accurate age because subtracting by year doesn't take months into account
         if ((birthDay.getDate() > today.getDate() && months === 0) || (months < 0)) {
             calculatedAge--;
         }
@@ -312,18 +347,24 @@ function SignUp() {
         return calculatedAge;
     }
 
+    // this function is to validate the form when the user tries to submit all their info
     const validateForm = () => {
+
+        // get certain fields from the form to check if there are any errors
         const {dob, name, username, password, confirm_password, phone_number, user_addresses } = form;
         const newErrors = {};
 
+        // if user less than 18 years of age throw error b/c user is too young
         if (getAge(dob) < 18) {
             newErrors.dob = 'You need to be at least 18 years old.';
         }
 
+        // name cannot be null
         if (name === '') {
             newErrors.name = 'Please enter a preferred name.';
         }
 
+        // username cannot be null
         if (username === '') {
             newErrors.username = 'Please enter a username.';
         } else {
@@ -341,17 +382,21 @@ function SignUp() {
             )
         }
 
+        // password must be at least 8 chars
         if (password.length < 8) {
             newErrors.password = 'Password is must be minimum 8 characters.';
         }
 
+        // password and confirm password must match
         if (password !== confirm_password) {
             newErrors.confirm_password = 'Passwords must match.';
         }
 
+        // phone number must be at least 12 digits
         if (phone_number.length > 0 && phone_number.length < 12) {
             newErrors.phone_number = 'Phone number is too short.';
         } else if (phone_number.length === 0) {
+            // phone number cannot be null
             newErrors.phone_number = 'Please enter a phone number.';
         } else {
             // phone numbers should be unique for all users
@@ -394,11 +439,14 @@ function SignUp() {
 
     const handleSubmit = e => {
         e.preventDefault()
+
         // validate form to see if there are any errors
         const formErrors = validateForm()
+
         // if formErrors errors keys are greater than 0 then there are errors and can't submit form
         if (Object.keys(formErrors).length > 0) {
             setErrors(formErrors);
+
         } else {
             // we send form to the back end
             fetch("/test", {
@@ -409,8 +457,6 @@ function SignUp() {
               });
         }
     }
-
-    const current_address = form['user_addresses'][Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]];
 
     return (
         <div>
@@ -547,59 +593,12 @@ function SignUp() {
                         { errors.zipcode }
                     </Form.Control.Feedback>
                     <br />
-                    <button className={'btn btn-success'} onClick={addNewAddress}>
+                    <button className={'btn btn-success'} onClick={saveNewAddress}>
                         {(Object.keys(form.user_addresses).length === 1) ? 'Save Address' : 'Save Another Address'}
                     </button>
                 </Form.Group>
                 : null }
-                {/*
-                <Form.Group controlId='delivery_address'>
-                    <Form.Label>Default Delivery Address (Optional)</Form.Label>
-                    <Form.Control
-                        placeholder='Save address as...'
-                        value={form['user_addresses'][Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]].address_name}
-                        onChange={(e) => setField('address_name', e.target.value)}
-                        isInvalid={!!errors.address_name}
-                    ></Form.Control>
-                    <Form.Control.Feedback type='invalid'>
-                        { errors.address_name }
-                    </Form.Control.Feedback>
-                    <br />
-                    <Form.Control
-                        placeholder='City'
-                        value={form['user_addresses'][Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]].city}
-                        onChange={(e) => setField('city', e.target.value)}
-                        isInvalid={!!errors.city}
-                    ></Form.Control>
-                    <Form.Control.Feedback type='invalid'>
-                        { errors.city }
-                    </Form.Control.Feedback>
-                    <br />
-                    <Form.Control
-                        placeholder='Address'
-                        value={form['user_addresses'][Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]].address}
-                        onChange={(e) => setField('address', e.target.value)}
-                        isInvalid={!!errors.address}
-                    ></Form.Control>
-                    <Form.Control.Feedback type='invalid'>
-                        { errors.address }
-                    </Form.Control.Feedback>
-                    <br />
-                    <Form.Control
-                        placeholder='Zipcode'
-                        value={form['user_addresses'][Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]].zipcode}
-                        onChange={(e) => setField('zipcode', e.target.value)}
-                        isInvalid={!!errors.zipcode}
-                    ></Form.Control>
-                    <Form.Control.Feedback type='invalid'>
-                        { errors.zipcode }
-                    </Form.Control.Feedback>
-                    <br />
-                    <button className={'btn btn-success'} onClick={addNewAddress}>
-                        {(Object.keys(form.user_addresses).length === 1) ? 'Save Address' : 'Save Another Address'}
-                    </button>
-                </Form.Group>
-                */}
+
                 {/*<Form.Group controlId='gender'>
                     <Form.Label>Gender</Form.Label>
                     <Form.Select
@@ -629,7 +628,6 @@ function SignUp() {
                         variant='primary'>Sign Up</Button>
                 </Form.Group>
             </Form>
-            <h1>list: {saved_addresses}</h1>
         </div>
     );
 }
