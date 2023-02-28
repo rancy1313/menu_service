@@ -351,7 +351,7 @@ function SignUp() {
     const validateForm = () => {
 
         // get certain fields from the form to check if there are any errors
-        const {dob, name, username, password, confirm_password, phone_number, user_addresses } = form;
+        const { dob, name, username, password, confirm_password, phone_number, user_addresses } = form;
         const newErrors = {};
 
         // if user less than 18 years of age throw error b/c user is too young

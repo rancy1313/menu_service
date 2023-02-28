@@ -12,8 +12,6 @@ authorization = Blueprint('auth', __name__)
 @authorization.route('/home', methods=['GET'])
 def start_page():
     print('hi')
-    email = request.form.get('email')
-    password = request.form.get('password')
     return {'members': ['member1', 'member2']}
 
 
@@ -64,5 +62,22 @@ def phone_number_check(phone_number):
         return 'False'
 
 
+@authorization.route('/login', methods=['GET', 'POST'])
+def login():
+    print('in login')
+    return redirect(url_for('auth.start_page'))
 
 
+@authorization.route('/validate-user/<username>/<password>', methods=['GET', 'POST'])
+def validate_user(username, password):
+    print('in validate')
+
+    print(username, password)
+    return 'True'
+
+
+@authorization.route('/bingo', methods=['GET', 'POST'])
+def bingo():
+    print('in bingo')
+
+    return jsonify(testing='hieee')
