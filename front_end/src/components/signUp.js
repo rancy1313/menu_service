@@ -370,6 +370,7 @@ function SignUp() {
         } else {
             // we do not want to pass an empty string in our username var or 404
             // check if username is already taken
+
             fetch(`/username-check/${username}/user`).then(
                 res => res.text()
             ).then(

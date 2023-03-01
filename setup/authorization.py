@@ -73,7 +73,16 @@ def validate_user(username, password):
     print('in validate')
 
     print(username, password)
-    return 'True'
+    user = User.query.filter_by(username=username).first()
+
+    if user is not None:
+        if check_password_hash(user.password, password):
+            return 'True'
+
+    return 'False'
+
+
+
 
 
 @authorization.route('/bingo', methods=['GET', 'POST'])

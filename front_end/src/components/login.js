@@ -3,30 +3,40 @@ import Form from 'react-bootstrap/Form';
 //import FormContainer from 'react-bootstrap/FormContainer';
 //import CountrySelect from 'react-bootstrap-country-select';
 import { useState, useEffect } from 'react';
+import axios from 'axios';
+
 
 function LoginUser() {
+    // userValidation is used to trigger the useEffect hook when a backend call is needed
+    // to validate the user
+    const [userValidation, setUserValidation] = useState(0);
+
+    // form is what we pass to the backend to log the user in
     const [form, setForm] = useState({'username': '', 'password': '', 'login': ''});
+
+    // errors is used to alert the users of any login errors
     const [errors, setErrors] = useState({});
-    const [work, setWork] = useState(0);
 
+    // useEffect will be used to validate the user on the backend
     useEffect(() => {
-        console.log('use', errors)
-        setErrors(errors)
 
-        fetch(`/validate-user/${form.username}/${user.password}`).then(
-            res => res.text()
-        ).then(
-             data => {
+        async function fetchData() {
+            if (form.username !== '' || form.password !== '') {
+                // call to back end to see if user exits with username/password
+                // returns True user exits and False if no user found
+                const request = await axios.get(`/validate-user/${form.username}/${form.password}`);
 
-                // if user does not exit then throw login error
-                if (data === 'True') {
-                    //newErrors.login = 'Login failed. Username or Password are incorrect.';
-                    setErrors({...errors, 'login': 'Login failed. Username or Password are incorrect.'});
-                }
-             }
-        )
+                // validate the form to see if there are any errors.
+                // pass backend response to throw a login error if needed
+                const formErrors = validateForm(request.data)
 
-    }, [form]);
+                // call handle submit with form errors
+                handleSubmit(formErrors);
+
+            }
+        }
+        fetchData();
+    }, [userValidation])
 
     const setField = (field, value) => {
         console.log('field: ', field);
@@ -46,15 +56,11 @@ function LoginUser() {
         })
 
         // reset login errors
-        if(!!errors['login'])
-        setErrors({
-            ...errors,
-            ['login']:null
-        })
+        delete errors.login;
     }
 
     // const validateForm = () => {
-    function validateForm() {
+    function validateForm(data) {
         // get certain fields from the form to check if there are any errors
         const { username, password } = form;
         const newErrors = {};
@@ -69,34 +75,23 @@ function LoginUser() {
             newErrors.password = 'Password is must be minimum 8 characters.';
         }
 
-        // if there are no form errors then we validate the user
-        if (Object.keys(newErrors).length === 0) {
-            // check if user exists with username and password entered
-            fetch(`/validate-user/${username}/${password}`).then(
-                res => res.text()
-            ).then(
-                 data => {
-
-                    // if user does not exit then throw login error
-                    if (data === 'True') {
-                        newErrors.login = 'Login failed. Username or Password are incorrect.';
-                        setErrors({...errors, 'login': 'Login failed. Username or Password are incorrect.'});
-                    }
-                 }
-            )
+        // check if there are no errors and if data is true then throw login error
+        if (Object.keys(newErrors).length === 0 && data === 'False') {
+            newErrors.login = 'Login failed. Username or Password are incorrect.';
         }
 
-        newErrors.stop_submission = 'True.';
         return newErrors;
     }
 
-    // this function is to make sure there are no errors in the form before sending it to the backend
-    const handleSubmit = e => {
-        e.preventDefault()
+    const validateUser = e => {
+        e.preventDefault();
 
-        // validate form to see if there are any errors
-        const formErrors = validateForm()
-        console.log('handleSubmit', formErrors, errors)
+        // trigger useEffect by updating userValidation
+        setUserValidation(userValidation+1);
+    }
+
+    // this function is to make sure there are no errors in the form before sending it to the backend
+    function handleSubmit(formErrors) {
 
         // if formErrors errors keys are greater than 0 then there are errors and can't submit form
         if (Object.keys(formErrors).length > 0) {
@@ -114,6 +109,7 @@ function LoginUser() {
     }
 
     return (
+        <div>
         <Form className="formSubmission">
             <Form.Control
               isInvalid={!!errors.login}
@@ -150,12 +146,13 @@ function LoginUser() {
             <Form.Group>
                 <Button
                     type='submit'
-                    onClick={handleSubmit}
+                    onClick={validateUser}
                     className='my-2'
                     variant='primary'>Login</Button>
             </Form.Group>
-
         </Form>
+
+        </div>
     );
 }
 
