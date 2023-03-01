@@ -2,12 +2,13 @@ import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 //import FormContainer from 'react-bootstrap/FormContainer';
 //import CountrySelect from 'react-bootstrap-country-select';
-import { useState } from 'react';
 import { Multiselect } from "multiselect-react-dropdown";
 // phone number input code
 import 'react-phone-number-input/style.css'
 import PhoneInput from 'react-phone-number-input'
 import Card from 'react-bootstrap/Card';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 function SignUp() {
 
@@ -20,6 +21,8 @@ function SignUp() {
     var day = dateObj.getUTCDate();
     var year = dateObj.getUTCFullYear();
     var newDate = year + "-" + month.toString().padStart(2, '0') + "-" + day.toString().padStart(2, '0');
+
+    const [formValidation, setFormValidation] = useState(0);
 
     // we have a base form set that will hold all the information from the user to send to the backend when completed
     const [form, setForm] = useState({'dob': newDate, 'name': '', 'username': '', 'password': '',
@@ -36,6 +39,44 @@ function SignUp() {
 
     // only addresses that were saved by the user will be sent to the backend
     const [saved_addresses, setSaved_addresses] = useState([]);
+
+    // useEffect will be used to validate the form on the backend for username/phone number
+    useEffect(() => {
+
+        // split it so that it calls two functions and then for user/pass
+        // always call handle submit
+        async function fetchData() {
+            // this dict is used to pass backend data to validate the form
+            const backend_dict = {'username_request': '', 'phone_number_request': ''}
+
+            // if form.username is not '' then we can check in the back end
+            if (form.username !== '') {
+                // call to back end to see if user exits with username
+                // returns found if username taken
+                const username_request = await axios.get(`/username-validation/${form.username}`);
+                backend_dict.username_request = username_request.data;
+            }
+
+            // if form.phone_number is not '' then we can check in the back end
+            if (form.phone_number !== '') {
+                // call to back end to see if user exits with phone number
+                // returns found if phone number taken
+                const phone_number_request = await axios.get(`/phone-number-validation/${form.phone_number}`);
+                backend_dict.phone_number_request = phone_number_request.data;
+            }
+
+            // validate the form to see if there are any errors.
+            // pass backend response to throw errors if needed
+            const formErrors = validateForm(backend_dict)
+            // call handle submit with form errors if formValidation is not 0
+            // so do noy fetch data on page first render
+            if (formValidation !== 0) {
+                handleSubmit(formErrors);
+            }
+        }
+
+        fetchData();
+    }, [formValidation])
 
     // this is used for our onChange function to update the form
     const setField = (field, value) => {
@@ -348,7 +389,7 @@ function SignUp() {
     }
 
     // this function is to validate the form when the user tries to submit all their info
-    const validateForm = () => {
+    const validateForm = ({ username_request, phone_number_request }) => {
 
         // get certain fields from the form to check if there are any errors
         const { dob, name, username, password, confirm_password, phone_number, user_addresses } = form;
@@ -370,17 +411,9 @@ function SignUp() {
         } else {
             // we do not want to pass an empty string in our username var or 404
             // check if username is already taken
-
-            fetch(`/username-check/${username}/user`).then(
-                res => res.text()
-            ).then(
-                data => {
-                    // if username is taken then throw error
-                    if (data === 'True') {
-                        setErrors({...errors, 'username': 'Username is already taken.'})
-                    }
-                }
-            )
+            if (username_request === 'Found') {
+                newErrors.username = 'Username is already taken.';
+            }
         }
 
         // password must be at least 8 chars
@@ -401,16 +434,9 @@ function SignUp() {
             newErrors.phone_number = 'Please enter a phone number.';
         } else {
             // phone numbers should be unique for all users
-            fetch(`/phone_number-check/${phone_number}`).then(
-                res => res.text()
-            ).then(
-                data => {
-                    // if phone_number is taken then throw error
-                    if (data === 'True') {
-                        setErrors({...errors, 'phone_number': 'Phone number is already taken.'})
-                    }
-                }
-            )
+            if (phone_number_request === 'Found') {
+                newErrors.phone_number = 'Phone number is already taken.';
+            }
         }
 
         /*
@@ -438,11 +464,19 @@ function SignUp() {
         return newErrors;
     }
 
-    const handleSubmit = e => {
-        e.preventDefault()
+    // this function is to trigger the useEffect function to make a call to the back end
+    const callUseEffect = e => {
+        e.preventDefault();
+
+        // trigger useEffect by updating userValidation
+        setFormValidation(formValidation+1);
+    }
+
+    function handleSubmit(formErrors) {
+        //e.preventDefault()
 
         // validate form to see if there are any errors
-        const formErrors = validateForm()
+        //const formErrors = validateForm()
 
         // if formErrors errors keys are greater than 0 then there are errors and can't submit form
         if (Object.keys(formErrors).length > 0) {
@@ -624,7 +658,7 @@ function SignUp() {
                 <Form.Group>
                     <Button
                         type='submit'
-                        onClick={handleSubmit}
+                        onClick={callUseEffect}
                         className='my-2'
                         variant='primary'>Sign Up</Button>
                 </Form.Group>

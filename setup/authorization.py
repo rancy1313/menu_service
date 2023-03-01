@@ -40,26 +40,41 @@ def test():
     return jsonify({})
 
 
-@authorization.route('/username-check/<username>/<user_type>', methods=['GET', 'POST'])
-def username_check(username, user_type):
-    if user_type == 'user':
-        user = User.query.filter_by(username=username).first()
-        print(user)
-    else:
-        user = CompanyUser.query.filter_by(username=username).first()
+@authorization.route('/username-validation/<username>', methods=['GET', 'POST'])
+def username_check(username):
+
+    user = User.query.filter_by(username=username).first()
+    print(user)
+    users = User.query.all()
+    print(users)
+    print(users[0].username)
     if user:
-        return 'True'
+        return 'Found'
     else:
         return 'False'
 
 
-@authorization.route('/phone_number-check/<phone_number>', methods=['GET', 'POST'])
+@authorization.route('/phone-number-validation/<phone_number>', methods=['GET', 'POST'])
 def phone_number_check(phone_number):
     user = User.query.filter_by(phone_number=phone_number).first()
     if user:
-        return 'True'
+        return 'Found'
     else:
         return 'False'
+
+
+@authorization.route('/sign-up-form-validation/<username>/<phone_number>', methods=['GET', 'POST'])
+def sign_up_form_validation(username, phone_number):
+    username = User.query.filter_by(username=username).first()
+    phone_number = User.query.filter_by(phone_number=phone_number).first()
+    form_validation = {'username': '', 'phone_number': ''}
+    if username:
+        form_validation['username'] = 'Found'
+    if phone_number:
+        form_validation['phone_number'] = 'Found'
+
+    return form_validation
+
 
 
 @authorization.route('/login', methods=['GET', 'POST'])
@@ -70,9 +85,7 @@ def login():
 
 @authorization.route('/validate-user/<username>/<password>', methods=['GET', 'POST'])
 def validate_user(username, password):
-    print('in validate')
 
-    print(username, password)
     user = User.query.filter_by(username=username).first()
 
     if user is not None:
@@ -80,9 +93,6 @@ def validate_user(username, password):
             return 'True'
 
     return 'False'
-
-
-
 
 
 @authorization.route('/bingo', methods=['GET', 'POST'])
