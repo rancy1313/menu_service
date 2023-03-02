@@ -15,18 +15,22 @@ def start_page():
     return {'members': ['member1', 'member2']}
 
 
-@authorization.route('/test', methods=['POST'])
-def test():
+# this function gets a form from the front end and uses the info to create an account
+# for the user
+@authorization.route('/sign-up-user', methods=['POST'])
+def sign_up_user():
+    # request form from front end
     form_data = json.loads(request.data)
-    print('test:', form_data)
-    print('dob', form_data['dob'])
-    print('type', type(form_data['user_addresses']))
+    # create user object with the data
     user = User(preferred_name=form_data['name'], dob=form_data['dob'], username=form_data['username'],
                 password=generate_password_hash(form_data['password']), allergies=form_data['allergies'],
                 phone_number=form_data['phone_number'])
+
     db.session.add(user)
     db.session.commit()
 
+    # for every address in the form, we create an address object and form a relationship with
+    # the user
     for address in form_data['user_addresses']:
         user_address = Address(address_name=form_data['user_addresses'][address]['address_name'],
                                city=form_data['user_addresses'][address]['city'],
@@ -40,30 +44,29 @@ def test():
     return jsonify({})
 
 
+# this function makes sure users cannot use a username that is taken already
 @authorization.route('/username-validation/<username>', methods=['GET', 'POST'])
 def username_check(username):
-
     user = User.query.filter_by(username=username).first()
-    print(user)
-    users = User.query.all()
-    print(users)
-    print(users[0].username)
+    # if user is found with that username then return 'found'
     if user:
         return 'Found'
     else:
         return 'False'
 
 
+# this function makes sure users cannot use a phone number that is taken already
 @authorization.route('/phone-number-validation/<phone_number>', methods=['GET', 'POST'])
 def phone_number_check(phone_number):
     user = User.query.filter_by(phone_number=phone_number).first()
+    # if user is found with that phone number then return 'found'
     if user:
         return 'Found'
     else:
         return 'False'
 
 
-@authorization.route('/sign-up-form-validation/<username>/<phone_number>', methods=['GET', 'POST'])
+'''@authorization.route('/sign-up-form-validation/<username>/<phone_number>', methods=['GET', 'POST'])
 def sign_up_form_validation(username, phone_number):
     username = User.query.filter_by(username=username).first()
     phone_number = User.query.filter_by(phone_number=phone_number).first()
@@ -73,9 +76,10 @@ def sign_up_form_validation(username, phone_number):
     if phone_number:
         form_validation['phone_number'] = 'Found'
 
-    return form_validation
+    return form_validation'''
 
 
+# this function is used to log in the user
 @authorization.route('/login', methods=['GET', 'POST'])
 def login():
     # get form from front end
@@ -87,48 +91,61 @@ def login():
     # login user
     login_user(user, remember=True)
 
-    print(current_user)
-
+    # redirect to get current user function to pass current user to the front end
     return redirect(url_for('auth.get_current_user'))
 
 
+# this function is used to get the current active user and pass it to the front end
 @authorization.route('/get-current-user', methods=['GET', 'POST'])
 def get_current_user():
-    print('hey', current_user)
+    # if there is no current user then just send empty dict
     if current_user.is_anonymous:
         return {}
     else:
+        user_addresses = {}
+        # loop through the users addresses to convert them to dict to pass them to the front end
+        for address in current_user.addresses:
+            user_addresses['delivery_address' + str(address.id)] = {'address_name': address.address_name,
+                                                                    'city': address.city,
+                                                                    'address': address.address,
+                                                                    'zipcode': address.zipcode}
 
-        current_user_dict = {'id': current_user.id, 'preferred_name': current_user.preferred_name,
-                             'allergies': current_user.allergies, 'addresses': current_user.addresses}
+        # if user has no addresses saved then pass an empty address to the front end
+        if len(current_user.addresses) == 0:
+            user_addresses['delivery_address1'] = {'address_name': '',
+                                                   'city': '',
+                                                   'address': '',
+                                                   'zipcode': ''}
+
+        # assign user_addresses to current_user_dict's user_addresses
+        current_user_dict = {'id': current_user.id,
+                             'preferred_name': current_user.preferred_name,
+                             'allergies': current_user.allergies,
+                             'user_addresses': user_addresses}
 
         return current_user_dict
 
 
+# this function is used to log the current user out
 @authorization.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
-    print('logout')
-
     logout_user()
     return {}
-    #return redirect(url_for('auth.get_current_user'))
 
 
+# this function is used to validate the user trying to log in
 @authorization.route('/validate-user/<username>/<password>', methods=['GET', 'POST'])
 def validate_user(username, password):
-
+    # check if user exists with the given username
     user = User.query.filter_by(username=username).first()
 
+    # if user is found then check password else return false
     if user is not None:
+        # if password matches what is in the db then return true to login the user
         if check_password_hash(user.password, password):
             return 'True'
 
     return 'False'
 
 
-@authorization.route('/bingo', methods=['GET', 'POST'])
-def bingo():
-    print('in bingo')
-
-    return jsonify(testing='hieee')

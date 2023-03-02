@@ -1,14 +1,12 @@
-import Button from 'react-bootstrap/Button';
-import Form from 'react-bootstrap/Form';
-//import FormContainer from 'react-bootstrap/FormContainer';
-//import CountrySelect from 'react-bootstrap-country-select';
-import { Multiselect } from "multiselect-react-dropdown";
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 // phone number input code
 import 'react-phone-number-input/style.css'
 import PhoneInput from 'react-phone-number-input'
 import Card from 'react-bootstrap/Card';
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import Form from 'react-bootstrap/Form';
+import { Multiselect } from "multiselect-react-dropdown";
+import Button from 'react-bootstrap/Button';
 
 function SignUp() {
 
@@ -22,6 +20,7 @@ function SignUp() {
     var year = dateObj.getUTCFullYear();
     var newDate = year + "-" + month.toString().padStart(2, '0') + "-" + day.toString().padStart(2, '0');
 
+    // used to trigger handleSubmit
     const [formValidation, setFormValidation] = useState(0);
 
     // we have a base form set that will hold all the information from the user to send to the backend when completed
@@ -473,10 +472,6 @@ function SignUp() {
     }
 
     function handleSubmit(formErrors) {
-        //e.preventDefault()
-
-        // validate form to see if there are any errors
-        //const formErrors = validateForm()
 
         // if formErrors errors keys are greater than 0 then there are errors and can't submit form
         if (Object.keys(formErrors).length > 0) {
@@ -484,7 +479,7 @@ function SignUp() {
 
         } else {
             // we send form to the back end
-            fetch("/test", {
+            fetch("/sign-up-user", {
                 method: "POST",
                 body: JSON.stringify( form ),
               }).then((_res) => {

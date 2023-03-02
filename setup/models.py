@@ -5,7 +5,7 @@ from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy import PickleType
 
 
-# Companies can have an account to enroll in the service.
+# Companies can have an account.js to enroll in the service.
 # Also, one company can own multiple restaurants.
 class Company(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -105,7 +105,7 @@ class Order(db.Model):
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
 
-    # account info
+    # account.js info
     username = db.Column(db.String(256))
     password = db.Column(db.String(68), nullable=False)
 
