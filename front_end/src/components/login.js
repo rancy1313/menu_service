@@ -103,6 +103,7 @@ function LoginUser() {
                 method: "POST",
                 body: JSON.stringify( form ),
             }).then((_res) => {
+                // direct to user home and then pass current user info from backend
                 window.location.href = "/home";
             });
         }

@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, render_template, request, flash, redirect, url_for
-from .models import User, CompanyUser, Address
+from .models import User, Company, Address
 import json
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
@@ -76,11 +76,43 @@ def sign_up_form_validation(username, phone_number):
     return form_validation
 
 
-
 @authorization.route('/login', methods=['GET', 'POST'])
 def login():
-    print('in login')
-    return redirect(url_for('auth.start_page'))
+    # get form from front end
+    form = json.loads(request.data)
+
+    # user is already validated
+    user = User.query.filter_by(username=form['username']).first()
+
+    # login user
+    login_user(user, remember=True)
+
+    print(current_user)
+
+    return redirect(url_for('auth.get_current_user'))
+
+
+@authorization.route('/get-current-user', methods=['GET', 'POST'])
+def get_current_user():
+    print('hey', current_user)
+    if current_user.is_anonymous:
+        return {}
+    else:
+
+        current_user_dict = {'id': current_user.id, 'preferred_name': current_user.preferred_name,
+                             'allergies': current_user.allergies, 'addresses': current_user.addresses}
+
+        return current_user_dict
+
+
+@authorization.route('/logout', methods=['GET', 'POST'])
+@login_required
+def logout():
+    print('logout')
+
+    logout_user()
+    return {}
+    #return redirect(url_for('auth.get_current_user'))
 
 
 @authorization.route('/validate-user/<username>/<password>', methods=['GET', 'POST'])

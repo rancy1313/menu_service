@@ -22,7 +22,7 @@ def create_app():
     # its empty in the decorator if it had something it would be /auth/hello
     # app.register_blueprint(auth, url_prefix='/auth/hello')
     # we need to import to make sure it defines the databases before you create them
-    from .models import CompanyUser, User, Address
+    from .models import Company, User, Address
 
     # this is new code stack overflow
     # db was not created in same directory take note
@@ -31,7 +31,11 @@ def create_app():
 
     # where does flask redirect us if user is not logged and login is not required
     login_manager = LoginManager()
-    login_manager.login_view = 'authorization.login'
+    login_manager.login_view = 'auth.get_current_user'
     login_manager.init_app(app)
+
+    @login_manager.user_loader
+    def load_user(id):
+        return User.query.get(int(id))
 
     return app
