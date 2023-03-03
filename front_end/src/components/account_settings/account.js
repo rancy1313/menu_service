@@ -1,26 +1,60 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Card from 'react-bootstrap/Card';
 import Form from 'react-bootstrap/Form';
 import { Multiselect } from "multiselect-react-dropdown";
 import Button from 'react-bootstrap/Button';
+import axios from 'axios';
 
 
-export default function Account(props) {
+//export default function Account(props) {
+export default function Account() {
+
+    // used to display the current user's account
+    const [current_user, setCurrent_user] = useState({});
+
+    // this form will be used to update the users information
+    const [form, setForm] = useState({'preferred_name': '',
+                                      'allergies': '',
+                                      'user_addresses': '' });
+
+    // if the data from the user is not up to specifications then there will be an error and the form will
+    // not be sent to the backend
+    const [errors, setErrors] = useState({});
+
+    const [current_address, setCurrent_address] = useState([]);
+
+    // only addresses that were saved by the user will be sent to the backend
+    const [saved_addresses, setSaved_addresses] = useState([]);
+
+    // fetch the current user from the back end on render
+    useEffect(() => {
+
+        async function fetchData() {
+            // call back end
+            const request = await axios.get('/get-current-user');
+            // set response data to current user
+            setCurrent_user(request.data);
+            setForm({'preferred_name': request.data.preferred_name,
+                     'allergies': request.data.allergies,
+                     'user_addresses': request.data.user_addresses });
+            setSaved_addresses([request.data.user_addresses]);
+            setCurrent_address(request.data.user_addresses[Object.keys(request.data.user_addresses)[Object.keys(request.data.user_addresses).length - 1]])
+        }
+        fetchData();
+
+    }, []);
+
+    // this is to shorten the code needed to get the current address which is the address that is currently being edited
+    //const current_address = form['user_addresses'][Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]];
+
+
     // set the available allergies to pass in the bootstrap selector
     const allergies = ['Milk', 'Egg', 'Fish', 'Crustacean Shell Fish', 'Tree Nuts', 'Wheat', 'Peanuts', 'Soybeans', 'Sesame']
-
-    //console.log('user_addresses', props.current_user.user_addresses)
-
-    //props.current_user.user_addresses[['delivery_address' + (Object.keys(props.current_user.user_addresses).length + 1)]] = {'address_name': '', 'city': '', 'address': '', 'zipcode': ''}
-
+    /*
     // this form will be used to update the users information
     const [form, setForm] = useState({'preferred_name': props.current_user.preferred_name,
                                       'allergies': props.current_user.allergies,
                                       'user_addresses': props.current_user.user_addresses });
-
-    // initialize user addresses to have an empty address
-    const tmp_user_addresses = [props.current_user.user_addresses]
-    tmp_user_addresses.push({ ['delivery_address' + (Object.keys(form.user_addresses).length + 1)] : {'address_name': '', 'city': '', 'address': '', 'zipcode': ''}})
 
     // if the data from the user is not up to specifications then there will be an error and the form will
     // not be sent to the backend
@@ -31,8 +65,17 @@ export default function Account(props) {
 
     // this is to shorten the code needed to get the current address which is the address that is currently being edited
     const current_address = form['user_addresses'][Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]];
+    */
+    /*useEffect(() => {
+        console.log('render')
+        setForm({'preferred_name': props.current_user.preferred_name,
+                 'allergies': props.current_user.allergies,
+                 'user_addresses': props.current_user.user_addresses });
 
-    //const current_address = tmp_user_addresses[tmp_user_addresses.length - 1];
+        setErrors({});
+        setSaved_addresses([props.current_user.user_addresses]);
+
+    }, [])*/
 
     // this is used for the onSelect function of the Multiselect component and just updates the form by form
     function setAllergies(selectedList, selectedItem) {
@@ -42,7 +85,7 @@ export default function Account(props) {
     // this component is to format the saved addresses
     function AddressCards({ index, id, address_name, city, address, zipcode }) {
         return (
-            <Card style={{ width: '23rem' }}>
+            <Card style={{ width: '30rem', float: 'left' }}>
                 <div id={'card_'+id}>
                     <Card.Body>
                         <Card.Title>{ index + 1 }. { address_name }</Card.Title>
@@ -202,7 +245,7 @@ export default function Account(props) {
 
             // we do not want the latest address because that is the one that is being saved
             if (key !== Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]) {
-                addresses.push(key)
+                addresses.push(key);
             }
         }
 
@@ -257,7 +300,7 @@ export default function Account(props) {
             setForm({
                     ...form,
                     'user_addresses':tmp
-            })
+            });
             // loop through the keys in the current address to delete the old errors
             for (const key in current_address) {
                 delete errors[key];
@@ -279,26 +322,26 @@ export default function Account(props) {
         */
         if (field in form['user_addresses'][Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]]) {
             // assign delivery_address to tmp var
-            const tmp = form.user_addresses
+            const tmp = form.user_addresses;
             // tmp and form.delivery_address point to same dict,
             // but changes are not saved so we use the setForm func to save the changes
-            tmp[Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]][field] = value
+            tmp[Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]][field] = value;
             setForm({
                 ...form,
                 'user_addresses':tmp
-            })
+            });
         } else {
             // just change the field in the form
             setForm({
                 ...form,
                 [field]:value
-            })
+            });
             // reset errors if there are no new errors
             if(!!errors[field])
             setErrors({
                 ...errors,
                 [field]:null
-            })
+            });
         }
     }
 
@@ -331,7 +374,7 @@ export default function Account(props) {
                     setForm({
                         ...form,
                         'user_addresses':tmp
-                    })
+                    });
                 }
             }
         }
@@ -341,14 +384,12 @@ export default function Account(props) {
 
     const handleSubmit = e => {
         e.preventDefault();
-
-        console.log('hi')
+        console.log('hey')
     }
 
-    console.log('test', props.current_user.user_addresses)
     return (
         <div className='center'>
-            <h1>Account, { props.current_user.preferred_name }.</h1>
+            <h1>Account, { current_user.preferred_name }.</h1>
             <Form className="formSubmission">
                 <Form.Group controlId='preferred_name'>
                     <Form.Label>Preferred Name</Form.Label>
@@ -368,18 +409,19 @@ export default function Account(props) {
 
                 { (Object.keys(form.user_addresses).length > 1) ? (
                     getAddresses().map(function(address, index) {
-                        return <div key={index}><AddressCards
+                        return <div key={index} className={'center_cards'}>
+                                <AddressCards
                                     index={index}
                                     id={address}
                                     address_name={form.user_addresses[address].address_name}
                                     city={form.user_addresses[address].city}
                                     address={form.user_addresses[address].address}
                                     zipcode={form.user_addresses[address].zipcode}
-                              /></div>;
+                                /></div>;
                     })
-                ) : (null)
+                ) : (null) }
 
-                }
+                <p style={{ clear: 'both' }}></p>
                 {current_address ?
                 <Form.Group controlId='delivery_address'>
                     <Form.Label>Default Delivery Address (Optional)</Form.Label>

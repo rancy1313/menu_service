@@ -103,19 +103,23 @@ def get_current_user():
         return {}
     else:
         user_addresses = {}
+
+        # delivery_address{count} is how they are named
+        count = 1
         # loop through the users addresses to convert them to dict to pass them to the front end
         for address in current_user.addresses:
-            user_addresses['delivery_address' + str(address.id)] = {'address_name': address.address_name,
-                                                                    'city': address.city,
-                                                                    'address': address.address,
-                                                                    'zipcode': address.zipcode}
+            user_addresses['delivery_address' + str(count)] = {'address_name': address.address_name,
+                                                               'city': address.city,
+                                                               'address': address.address,
+                                                               'zipcode': address.zipcode}
+            # increment by 1
+            count += 1
 
-        # if user has no addresses saved then pass an empty address to the front end
-        if len(current_user.addresses) == 0:
-            user_addresses['delivery_address1'] = {'address_name': '',
-                                                   'city': '',
-                                                   'address': '',
-                                                   'zipcode': ''}
+        # add an empty address for editing
+        user_addresses['delivery_address' + str(count)] = {'address_name': '',
+                                                           'city': '',
+                                                           'address': '',
+                                                           'zipcode': ''}
 
         # assign user_addresses to current_user_dict's user_addresses
         current_user_dict = {'id': current_user.id,
@@ -147,5 +151,3 @@ def validate_user(username, password):
             return 'True'
 
     return 'False'
-
-

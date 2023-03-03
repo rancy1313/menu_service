@@ -27,7 +27,7 @@ function NavbarFrontEnd() {
         }
         fetchData();
 
-    }, [])
+    }, []);
 
     // the component used to handle a user logging out
     function Logout() {
@@ -57,25 +57,25 @@ function NavbarFrontEnd() {
 
     return (
         <div>
-            <Navbar bg="dark test" variant="dark">
+            <Navbar bg="dark" variant="dark">
                 <Container>
                     <Navbar.Brand href="#home">Navbar</Navbar.Brand>
                     <Nav className="me-auto">
 
                         { typeof current_user.preferred_name !== 'undefined' ? null : (
-                        <>
-                            <Nav.Link href="/home">Home</Nav.Link>
-                            <Nav.Link as={Link} to="/SignUp">Sign Up</Nav.Link>
-                            <Nav.Link as={Link} to="/login">Login</Nav.Link>
-                        </>
+                            <>
+                                <Nav.Link href="/home">Home</Nav.Link>
+                                <Nav.Link as={Link} to="/SignUp">Sign Up</Nav.Link>
+                                <Nav.Link as={Link} to="/login">Login</Nav.Link>
+                            </>
                         ) }
 
                         { typeof current_user.preferred_name !== 'undefined' ? (
-                        <>
-                            <Nav.Link as={Link} to="/user_home">Home</Nav.Link>
-                            <Nav.Link as={Link} to="/account">Account</Nav.Link>
-                            <Nav.Link as={Link} to="/logout">TestLogin</Nav.Link>
-                        </>
+                            <>
+                                <Nav.Link as={Link} to="/user_home">Home</Nav.Link>
+                                <Nav.Link as={Link} to="/account">Account</Nav.Link>
+                                <Nav.Link as={Link} to="/logout">Logout</Nav.Link>
+                            </>
                         ) : null }
 
                     </Nav>
@@ -86,7 +86,9 @@ function NavbarFrontEnd() {
                 <Route path='/SignUp' element={<SignUp />} />
                 <Route path='/login' element={<Login />} />
                 <Route path='/user_home' element={<UserHome current_user={current_user} />} />
-                <Route path='/account' element={<Account current_user={current_user} />} />
+
+                <Route path='/account' element={<Account />} />
+                {/*<Route path='/account' element={<Account current_user={current_user} />}*/}
                 <Route path='/logout/*' element={<Logout />} />
             </Routes>
         </div>

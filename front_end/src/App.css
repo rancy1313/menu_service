@@ -35,5 +35,15 @@
 
 .center > * {
     text-align: center;
-    margin: 20px;
+    margin: 20px auto;
+}
+
+.center_cards > * {
+    text-align: center;
+    margin: 10px 10px;
+}
+
+.centers {
+text-align: center;
+margin: 20px auto;
 }
