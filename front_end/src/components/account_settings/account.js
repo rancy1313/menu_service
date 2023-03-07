@@ -21,8 +21,6 @@ export default function Account() {
     // not be sent to the backend
     const [errors, setErrors] = useState({});
 
-    const [current_address, setCurrent_address] = useState([]);
-
     // only addresses that were saved by the user will be sent to the backend
     const [saved_addresses, setSaved_addresses] = useState([]);
 
@@ -37,15 +35,20 @@ export default function Account() {
             setForm({'preferred_name': request.data.preferred_name,
                      'allergies': request.data.allergies,
                      'user_addresses': request.data.user_addresses });
-            setSaved_addresses([request.data.user_addresses]);
-            setCurrent_address(request.data.user_addresses[Object.keys(request.data.user_addresses)[Object.keys(request.data.user_addresses).length - 1]])
+
+            // we remove the last address from the saved addresses list b/c that address is always
+            // an empty current list.
+            const remove_last_address = Object.keys(request.data.user_addresses);
+            remove_last_address.pop();
+            setSaved_addresses(remove_last_address);
+
         }
         fetchData();
 
     }, []);
 
     // this is to shorten the code needed to get the current address which is the address that is currently being edited
-    //const current_address = form['user_addresses'][Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]];
+    const current_address = form['user_addresses'][Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]];
 
 
     // set the available allergies to pass in the bootstrap selector
@@ -128,7 +131,7 @@ export default function Account() {
         for (const field in editForm) {
             // if a field is empty then we throw an error and changes are not saved
             if (editForm[field] === '') {
-                newErrors[('editField_'+id)] = 'Changes were not saved because a field was empty.';
+                newErrors[('editField_'+id)] = 'Changes were not saved because all fields were not filled out.';
                 setErrors(newErrors);
                 // break b/c the error would be the same for whichever field it was
                 break;
@@ -282,6 +285,7 @@ export default function Account() {
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
         } else {
+
             // update saved addresses list to include the new address
             setSaved_addresses(saved_addresses => [...saved_addresses, Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]])
             // if there are no errors then we add a new address
@@ -296,6 +300,7 @@ export default function Account() {
             */
             tmp['delivery_address' + (parseInt(Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1].replace('delivery_address', '')) + 1)]
                                                         = {'address_name': '', 'city': '', 'address': '', 'zipcode': ''};
+
             // replace the old user_addresses with a new one that has the new address saved
             setForm({
                     ...form,
@@ -310,9 +315,6 @@ export default function Account() {
 
     // this is used for our onChange function to update the form
     const setField = (field, value) => {
-        console.log('field: ', field);
-        console.log('value: ', value);
-
         /*
            1. if it is a delivery address change then those are updated differently
               b/c they are kept in a object.
@@ -384,7 +386,24 @@ export default function Account() {
 
     const handleSubmit = e => {
         e.preventDefault();
-        console.log('hey')
+
+        const formErrors = validateForm();
+
+        // if formErrors errors keys are greater than 0 then there are errors and can't submit form
+        if (Object.keys(formErrors).length > 0) {
+            setErrors(formErrors);
+
+        } else {
+            // we send form to the back end
+            console.log('hey', form);
+
+            /*fetch("/sign-up-user", {
+                method: "POST",
+                body: JSON.stringify( form ),
+              }).then((_res) => {
+                window.location.href = "/home";
+              });*/
+        }
     }
 
     return (
@@ -405,7 +424,7 @@ export default function Account() {
                 </Form.Group>
 
                 <p>Allergies</p>
-                <Multiselect onSelect={setAllergies} showArrow options={allergies} isObject={false} />
+                <Multiselect selectedValues={form.allergies} onSelect={setAllergies} showArrow options={allergies} isObject={false} />
 
                 { (Object.keys(form.user_addresses).length > 1) ? (
                     getAddresses().map(function(address, index) {

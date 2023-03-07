@@ -476,7 +476,7 @@ function SignUp() {
     }
 
     function handleSubmit(formErrors) {
-        console.log(formErrors)
+
         // if formErrors errors keys are greater than 0 then there are errors and can't submit form
         if (Object.keys(formErrors).length > 0) {
             setErrors(formErrors);
