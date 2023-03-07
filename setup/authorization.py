@@ -17,7 +17,7 @@ def start_page():
 
 # this function gets a form from the front end and uses the info to create an account
 # for the user
-@authorization.route('/sign-up-user', methods=['POST'])
+@authorization.route('/sign-up-user', methods=['POST', 'GET'])
 def sign_up_user():
     # request form from front end
     form_data = json.loads(request.data)
@@ -45,10 +45,11 @@ def sign_up_user():
 
 
 # this function makes sure users cannot use a username that is taken already
-@authorization.route('/username-validation/<username>', methods=['GET', 'POST'])
-def username_check(username):
-    user = User.query.filter_by(username=username).first()
-    # if user is found with that username then return 'found'
+@authorization.route('/username-validation', methods=['GET', 'POST'])
+def username_check():
+    user = User.query.filter_by(username=request.json.get('username', None)).first()
+
+    # if user is found with that username, then return 'found'
     if user:
         return 'Found'
     else:
@@ -56,10 +57,11 @@ def username_check(username):
 
 
 # this function makes sure users cannot use a phone number that is taken already
-@authorization.route('/phone-number-validation/<phone_number>', methods=['GET', 'POST'])
-def phone_number_check(phone_number):
-    user = User.query.filter_by(phone_number=phone_number).first()
-    # if user is found with that phone number then return 'found'
+@authorization.route('/phone-number-validation', methods=['GET', 'POST'])
+def phone_number_check():
+    user = User.query.filter_by(phone_number=request.json.get('phone_number', None)).first()
+
+    # if user is found with that phone number, then return 'found'
     if user:
         return 'Found'
     else:
@@ -139,15 +141,17 @@ def logout():
 
 
 # this function is used to validate the user trying to log in
-@authorization.route('/validate-user/<username>/<password>', methods=['GET', 'POST'])
-def validate_user(username, password):
+@authorization.route('/validate-user', methods=['GET', 'POST'])
+def validate_user():
     # check if user exists with the given username
-    user = User.query.filter_by(username=username).first()
+    user = User.query.filter_by(username=request.json.get('username', None)).first()
 
     # if user is found then check password else return false
     if user is not None:
-        # if password matches what is in the db then return true to login the user
-        if check_password_hash(user.password, password):
+        # if password matches what is in the db then return true to log in the user
+        if check_password_hash(user.password, request.json.get('password', None)):
             return 'True'
 
     return 'False'
+
+

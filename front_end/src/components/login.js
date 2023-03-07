@@ -21,21 +21,29 @@ function LoginUser() {
     useEffect(() => {
 
         async function fetchData() {
-            if (form.username !== '' || form.password !== '') {
-                // call to back end to see if user exits with username/password
-                // returns True user exits and False if no user found
-                const request = await axios.get(`/validate-user/${form.username}/${form.password}`);
 
-                // validate the form to see if there are any errors.
-                // pass backend response to throw a login error if needed
-                const formErrors = validateForm(request.data)
+            // call to back end to see if user exits with username/password
+            // returns True user exits and False if no user found
+            const request = await axios({
+                                            method: "POST",
+                                            url: "/validate-user",
+                                            data: form,
+                                          });
 
-                // call handle submit with form errors
-                handleSubmit(formErrors);
 
-            }
+            // validate the form to see if there are any errors.
+            // pass backend response to throw a login error if needed
+            const formErrors = validateForm(request.data)
+
+            // call handle submit with form errors
+            handleSubmit(formErrors);
+
         }
-        fetchData();
+
+        if (userValidation !== 0)
+            fetchData();
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userValidation])
 
     const setField = (field, value) => {
@@ -59,7 +67,7 @@ function LoginUser() {
         delete errors.login;
     }
 
-    // const validateForm = () => {
+
     function validateForm(data) {
         // get certain fields from the form to check if there are any errors
         const { username, password } = form;

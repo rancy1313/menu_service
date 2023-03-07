@@ -45,36 +45,40 @@ function SignUp() {
         // split it so that it calls two functions and then for user/pass
         // always call handle submit
         async function fetchData() {
+
             // this dict is used to pass backend data to validate the form
             const backend_dict = {'username_request': '', 'phone_number_request': ''}
 
-            // if form.username is not '' then we can check in the back end
-            if (form.username !== '') {
-                // call to back end to see if user exits with username
-                // returns found if username taken
-                const username_request = await axios.get(`/username-validation/${form.username}`);
-                backend_dict.username_request = username_request.data;
-            }
+            // do backend check to make sure username is not taken(case sensitivity is not checked)
+            const username_request = await axios({
+                                        method: "POST",
+                                        url: "/username-validation",
+                                        data: { 'username': form.username },
+                                      });
+            // update value in the backend dict that gets passed to validate form
+            backend_dict.username_request = username_request.data;
 
-            // if form.phone_number is not '' then we can check in the back end
-            if (form.phone_number !== '') {
-                // call to back end to see if user exits with phone number
-                // returns found if phone number taken
-                const phone_number_request = await axios.get(`/phone-number-validation/${form.phone_number}`);
-                backend_dict.phone_number_request = phone_number_request.data;
-            }
+            // do backend check to make sure phone_number is not taken
+            const phone_number_request = await axios({
+                                        method: "POST",
+                                        url: "/phone-number-validation",
+                                        data: { 'phone_number': form.phone_number },
+                                      });
+            // update value in the backend dict that gets passed to validate form
+            backend_dict.phone_number_request = phone_number_request.data;
 
             // validate the form to see if there are any errors.
             // pass backend response to throw errors if needed
             const formErrors = validateForm(backend_dict)
-            // call handle submit with form errors if formValidation is not 0
-            // so do noy fetch data on page first render
-            if (formValidation !== 0) {
-                handleSubmit(formErrors);
-            }
-        }
+            handleSubmit(formErrors);
 
-        fetchData();
+        }
+        // call handle submit with form errors if formValidation is not 0
+        // so do noy fetch data on page first render
+        if (formValidation !== 0)
+            fetchData()
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formValidation])
 
     // this is used for our onChange function to update the form
@@ -472,7 +476,7 @@ function SignUp() {
     }
 
     function handleSubmit(formErrors) {
-
+        console.log(formErrors)
         // if formErrors errors keys are greater than 0 then there are errors and can't submit form
         if (Object.keys(formErrors).length > 0) {
             setErrors(formErrors);
@@ -581,52 +585,62 @@ function SignUp() {
 
                 }
                 {current_address ?
-                <Form.Group controlId='delivery_address'>
-                    <Form.Label>Default Delivery Address (Optional)</Form.Label>
-                    <Form.Control
-                        placeholder='Save address as...'
-                        value={current_address.address_name}
-                        onChange={(e) => setField('address_name', e.target.value)}
-                        isInvalid={!!errors.address_name}
-                    ></Form.Control>
-                    <Form.Control.Feedback type='invalid'>
-                        { errors.address_name }
-                    </Form.Control.Feedback>
-                    <br />
-                    <Form.Control
-                        placeholder='City'
-                        value={current_address.city}
-                        onChange={(e) => setField('city', e.target.value)}
-                        isInvalid={!!errors.city}
-                    ></Form.Control>
-                    <Form.Control.Feedback type='invalid'>
-                        { errors.city }
-                    </Form.Control.Feedback>
-                    <br />
-                    <Form.Control
-                        placeholder='Address'
-                        value={current_address.address}
-                        onChange={(e) => setField('address', e.target.value)}
-                        isInvalid={!!errors.address}
-                    ></Form.Control>
-                    <Form.Control.Feedback type='invalid'>
-                        { errors.address }
-                    </Form.Control.Feedback>
-                    <br />
-                    <Form.Control
-                        placeholder='Zipcode'
-                        value={current_address.zipcode}
-                        onChange={(e) => setField('zipcode', e.target.value)}
-                        isInvalid={!!errors.zipcode}
-                    ></Form.Control>
-                    <Form.Control.Feedback type='invalid'>
-                        { errors.zipcode }
-                    </Form.Control.Feedback>
-                    <br />
-                    <button className={'btn btn-success'} onClick={saveNewAddress}>
-                        {(Object.keys(form.user_addresses).length === 1) ? 'Save Address' : 'Save Another Address'}
-                    </button>
-                </Form.Group>
+                    <>
+                        <Form.Group controlId='delivery_address_name'>
+                            <Form.Label>Default Delivery Address (Optional)</Form.Label>
+                            <Form.Control
+                                placeholder='Save address as...'
+                                value={current_address.address_name}
+                                onChange={(e) => setField('address_name', e.target.value)}
+                                isInvalid={!!errors.address_name}
+                            ></Form.Control>
+                            <Form.Control.Feedback type='invalid'>
+                                { errors.address_name }
+                            </Form.Control.Feedback>
+                        </Form.Group>
+
+                        <Form.Group controlId='delivery_address_city'>
+                            <Form.Control
+                                placeholder='City'
+                                value={current_address.city}
+                                onChange={(e) => setField('city', e.target.value)}
+                                isInvalid={!!errors.city}
+                            ></Form.Control>
+                            <Form.Control.Feedback type='invalid'>
+                                { errors.city }
+                            </Form.Control.Feedback>
+                        </Form.Group>
+
+                        <Form.Group controlId='delivery_address'>
+                            <Form.Control
+                                placeholder='Address'
+                                value={current_address.address}
+                                onChange={(e) => setField('address', e.target.value)}
+                                isInvalid={!!errors.address}
+                            ></Form.Control>
+                            <Form.Control.Feedback type='invalid'>
+                                { errors.address }
+                            </Form.Control.Feedback>
+                        </Form.Group>
+
+                        <Form.Group controlId='delivery_address_zipcode'>
+                            <Form.Control
+                                placeholder='Zipcode'
+                                value={current_address.zipcode}
+                                onChange={(e) => setField('zipcode', e.target.value)}
+                                isInvalid={!!errors.zipcode}
+                            ></Form.Control>
+                            <Form.Control.Feedback type='invalid'>
+                                { errors.zipcode }
+                            </Form.Control.Feedback>
+                        </Form.Group>
+
+                        <Form.Group>
+                            <button className={'btn btn-success'} onClick={saveNewAddress}>
+                                {(Object.keys(form.user_addresses).length === 1) ? 'Save Address' : 'Save Another Address'}
+                            </button>
+                        </Form.Group>
+                    </>
                 : null }
 
                 {/*<Form.Group controlId='gender'>
