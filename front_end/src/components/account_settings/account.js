@@ -4,6 +4,7 @@ import Form from 'react-bootstrap/Form';
 import { Multiselect } from "multiselect-react-dropdown";
 import Button from 'react-bootstrap/Button';
 import axios from 'axios';
+import { useNavigate } from "react-router-dom";
 
 
 //export default function Account(props) {
@@ -32,9 +33,11 @@ export default function Account() {
             const request = await axios.get('/get-current-user');
             // set response data to current user
             setCurrent_user(request.data);
+
             setForm({'preferred_name': request.data.preferred_name,
                      'allergies': request.data.allergies,
                      'user_addresses': request.data.user_addresses });
+
 
             // we remove the last address from the saved addresses list b/c that address is always
             // an empty current list.
@@ -53,32 +56,6 @@ export default function Account() {
 
     // set the available allergies to pass in the bootstrap selector
     const allergies = ['Milk', 'Egg', 'Fish', 'Crustacean Shell Fish', 'Tree Nuts', 'Wheat', 'Peanuts', 'Soybeans', 'Sesame']
-    /*
-    // this form will be used to update the users information
-    const [form, setForm] = useState({'preferred_name': props.current_user.preferred_name,
-                                      'allergies': props.current_user.allergies,
-                                      'user_addresses': props.current_user.user_addresses });
-
-    // if the data from the user is not up to specifications then there will be an error and the form will
-    // not be sent to the backend
-    const [errors, setErrors] = useState({});
-
-    // only addresses that were saved by the user will be sent to the backend
-    const [saved_addresses, setSaved_addresses] = useState([props.current_user.user_addresses]);
-
-    // this is to shorten the code needed to get the current address which is the address that is currently being edited
-    const current_address = form['user_addresses'][Object.keys(form.user_addresses)[Object.keys(form.user_addresses).length - 1]];
-    */
-    /*useEffect(() => {
-        console.log('render')
-        setForm({'preferred_name': props.current_user.preferred_name,
-                 'allergies': props.current_user.allergies,
-                 'user_addresses': props.current_user.user_addresses });
-
-        setErrors({});
-        setSaved_addresses([props.current_user.user_addresses]);
-
-    }, [])*/
 
     // this is used for the onSelect function of the Multiselect component and just updates the form by form
     function setAllergies(selectedList, selectedItem) {
@@ -344,6 +321,7 @@ export default function Account() {
                 ...errors,
                 [field]:null
             });
+
         }
     }
 
@@ -384,6 +362,8 @@ export default function Account() {
         return newErrors;
     }
 
+    const navigate = useNavigate();
+
     const handleSubmit = e => {
         e.preventDefault();
 
@@ -395,20 +375,23 @@ export default function Account() {
 
         } else {
             // we send form to the back end
-            console.log('hey', form);
-
-            /*fetch("/sign-up-user", {
+            fetch("/save-profile-changes", {
                 method: "POST",
                 body: JSON.stringify( form ),
-              }).then((_res) => {
-                window.location.href = "/home";
-              });*/
+              }).then(() => {
+
+                // navigate back to user home page
+                navigate('/user_home');
+              }
+            );
+
+
         }
     }
 
     return (
         <div className='center'>
-            <h1>Account, { current_user.preferred_name }.</h1>
+            <h1>Account. { current_user.preferred_name }.</h1>
             <Form className="formSubmission">
                 <Form.Group controlId='preferred_name'>
                     <Form.Label>Preferred Name</Form.Label>
@@ -424,7 +407,7 @@ export default function Account() {
                 </Form.Group>
 
                 <p>Allergies</p>
-                <Multiselect selectedValues={form.allergies} onSelect={setAllergies} showArrow options={allergies} isObject={false} />
+                <Multiselect selectedValues={form.allergies} onSelect={setAllergies} onRemove={setAllergies} showArrow options={allergies} isObject={false} />
 
                 { (Object.keys(form.user_addresses).length > 1) ? (
                     getAddresses().map(function(address, index) {

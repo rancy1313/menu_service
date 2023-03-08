@@ -68,19 +68,6 @@ def phone_number_check():
         return 'False'
 
 
-'''@authorization.route('/sign-up-form-validation/<username>/<phone_number>', methods=['GET', 'POST'])
-def sign_up_form_validation(username, phone_number):
-    username = User.query.filter_by(username=username).first()
-    phone_number = User.query.filter_by(phone_number=phone_number).first()
-    form_validation = {'username': '', 'phone_number': ''}
-    if username:
-        form_validation['username'] = 'Found'
-    if phone_number:
-        form_validation['phone_number'] = 'Found'
-
-    return form_validation'''
-
-
 # this function is used to log in the user
 @authorization.route('/login', methods=['GET', 'POST'])
 def login():
@@ -98,7 +85,7 @@ def login():
 
 
 # this function is used to get the current active user and pass it to the front end
-@authorization.route('/get-current-user', methods=['GET', 'POST'])
+@authorization.route('/get-current-user', methods=['GET'])
 def get_current_user():
     # if there is no current user then just send empty dict
     if current_user.is_anonymous:
@@ -113,7 +100,8 @@ def get_current_user():
             user_addresses['delivery_address' + str(count)] = {'address_name': address.address_name,
                                                                'city': address.city,
                                                                'address': address.address,
-                                                               'zipcode': address.zipcode}
+                                                               'zipcode': address.zipcode,
+                                                               'id': address.id}
             # increment by 1
             count += 1
 
@@ -121,7 +109,8 @@ def get_current_user():
         user_addresses['delivery_address' + str(count)] = {'address_name': '',
                                                            'city': '',
                                                            'address': '',
-                                                           'zipcode': ''}
+                                                           'zipcode': '',
+                                                           'id': ''}
 
         # assign user_addresses to current_user_dict's user_addresses
         current_user_dict = {'id': current_user.id,
@@ -129,6 +118,7 @@ def get_current_user():
                              'allergies': current_user.allergies,
                              'user_addresses': user_addresses}
 
+        # return current user
         return current_user_dict
 
 
@@ -155,3 +145,51 @@ def validate_user():
     return 'False'
 
 
+@authorization.route('/save-profile-changes', methods=['POST'])
+@login_required
+def save_profile_changes():
+    # get form from front end
+    form = json.loads(request.data)
+
+    # find the user from db to check update their info from the form
+    user = User.query.filter_by(id=current_user.id).first()
+
+    # update user names/allergies
+    user.preferred_name = form['preferred_name']
+    user.allergies = form['allergies']
+
+    # get list of the user's current addresses to compare with the form addresses
+    list_ids_current_addresses = [address.id for address in current_user.addresses]
+
+    # loop through the addresses in the form
+    for address in form['user_addresses']:
+        # if one of the addresses matches the ones in saved by the user then update it with the form info
+        if form['user_addresses'][address]['id'] in list_ids_current_addresses:
+            user_address = Address.query.filter_by(id=form['user_addresses'][address]['id']).first()
+            user_address.address_name = form['user_addresses'][address]['address_name']
+            user_address.city = form['user_addresses'][address]['city']
+            user_address.address = form['user_addresses'][address]['address']
+            user_address.zipcode = form['user_addresses'][address]['zipcode']
+        else:
+            # create a new address with the info from the form
+            user_address = Address(address_name=form['user_addresses'][address]['address_name'],
+                                   city=form['user_addresses'][address]['city'],
+                                   address=form['user_addresses'][address]['address'],
+                                   zipcode=form['user_addresses'][address]['zipcode'], user_id=current_user.id)
+
+            db.session.add(user_address)
+
+    # get list of form ids to check if current ids are in the list
+    list_ids_form_addresses = [form['user_addresses'][address]['id'] for address in form['user_addresses']]
+
+    # loop through the ids of the address currently saved.
+    for address_id in list_ids_current_addresses:
+        # if they are not in the list of form ids that means the user removed that address, so we delete it
+        if address_id not in list_ids_form_addresses:
+            user_address = Address.query.filter_by(id=address_id).first()
+            db.session.delete(user_address)
+
+    # save changes and jsonify
+    db.session.commit()
+
+    return jsonify({})
